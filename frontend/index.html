@@ -1,0 +1,591 @@
+<!-- frontend/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VisionGuide AI</title>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #16161d;
+      --surface-2: #1e1e28;
+      --border: #2a2a36;
+      --accent: #5eead4;
+      --accent-dim: #134e4a;
+      --danger: #f87171;
+      --text: #e8e8ec;
+      --text-dim: #8a8a99;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: radial-gradient(circle at top, #14141c, var(--bg) 60%);
+      color: var(--text);
+      text-align: center;
+      padding: 2rem 1rem;
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    /* ---------- Login ---------- */
+    #loginScreen {
+      max-width: 360px;
+      margin: 5rem auto;
+      padding: 2.5rem 2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+    #loginScreen h1 {
+      font-size: 1.5rem;
+      margin: 0 0 0.3rem;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    #loginScreen p { color: var(--text-dim); font-size: 0.9rem; margin-top: 0; margin-bottom: 1.8rem; }
+    .input-field {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      margin-bottom: 0.9rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .input-field:focus { border-color: var(--accent); }
+    #loginBtn {
+      width: 100%;
+      padding: 0.85rem;
+      border-radius: 10px;
+      border: none;
+      background: var(--accent);
+      color: #0a0a0f;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    #loginBtn:hover { opacity: 0.9; }
+    #loginError { color: var(--danger); min-height: 1.2rem; margin-top: 0.9rem; font-size: 0.85rem; }
+
+    /* ---------- Main app ---------- */
+    #mainApp { display: none; max-width: 520px; margin: 0 auto; }
+
+    h1.brand { font-size: 1.9rem; margin-bottom: 0.2rem; letter-spacing: -0.02em; }
+    #subtitle { color: var(--text-dim); margin-top: 0; margin-bottom: 1.8rem; font-size: 0.95rem; }
+
+    .video-wrap {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+    video { width: 100%; display: block; }
+
+    #startBtn {
+      padding: 0.75rem 2.2rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 10px;
+      border: none;
+      background: var(--accent);
+      color: #0a0a0f;
+      margin-top: 1.2rem;
+      transition: opacity 0.2s;
+    }
+    #startBtn:hover { opacity: 0.9; }
+    #startBtn:disabled { background: var(--surface-2); color: var(--text-dim); cursor: not-allowed; }
+
+    #pushToTalkZone {
+      margin: 1.8rem auto;
+      padding: 2.5rem 1.5rem;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 20px;
+      cursor: pointer;
+      user-select: none;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    }
+    #pushToTalkZone:active { transform: scale(0.98); }
+    #pushToTalkZone.listening {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+    #pushToTalkZone.disabled { opacity: 0.35; cursor: not-allowed; }
+
+    #micIcon { font-size: 2.8rem; display: block; margin-bottom: 0.5rem; }
+    #pushToTalkLabel { font-size: 1.05rem; margin: 0; color: var(--text-dim); }
+    #pushToTalkZone.listening #pushToTalkLabel { color: var(--text); }
+
+    #status {
+      margin: 1rem auto;
+      max-width: 480px;
+      font-size: 1rem;
+      min-height: 3rem;
+      line-height: 1.5;
+      color: var(--text);
+      padding: 0 0.5rem;
+    }
+
+    details {
+      margin-top: 2rem;
+      text-align: left;
+      color: var(--text-dim);
+    }
+    summary {
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 0.4rem 0;
+    }
+    .manual-buttons {
+      margin-top: 0.8rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .manual-buttons button {
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-dim);
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .manual-buttons button:hover { color: var(--text); border-color: var(--accent); }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      background: var(--surface-2);
+      color: var(--text-dim);
+      margin-top: 0.6rem;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ---------- Login Screen ---------- -->
+  <div id="loginScreen">
+    <h1>VisionGuide AI</h1>
+    <p>Sign in to continue</p>
+    <input id="loginEmail" class="input-field" type="email" placeholder="Email" />
+    <input id="loginPassword" class="input-field" type="password" placeholder="Password" />
+    <button id="loginBtn">Log In</button>
+    <p id="loginError"></p>
+  </div>
+
+  <!-- ---------- Main App ---------- -->
+  <div id="mainApp">
+    <h1 class="brand">VisionGuide AI</h1>
+    <p id="subtitle">Your voice-powered visual companion</p>
+
+    <div class="video-wrap">
+      <video id="video" autoplay playsinline muted></video>
+    </div>
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <button id="startBtn">Start Camera</button>
+
+    <div id="pushToTalkZone" class="disabled">
+      <span id="micIcon">🎤</span>
+      <p id="pushToTalkLabel">Start the camera, then hold here and speak</p>
+    </div>
+
+    <div id="status">Press "Start Camera" to begin.</div>
+    <div class="badge">🔒 Face data stays on-device, never sent to the cloud</div>
+
+    <details>
+      <summary>Manual mode (debug)</summary>
+      <div class="manual-buttons">
+        <button id="detectBtn">Detect Objects</button>
+        <button id="readTextBtn">Read Text</button>
+        <button id="describeSceneBtn">Describe Scene</button>
+        <button id="identifyCurrencyBtn">Identify Currency</button>
+      </div>
+    </details>
+  </div>
+
+  <script>
+    // ---------- Elements ----------
+    const loginScreen = document.getElementById('loginScreen');
+    const mainApp = document.getElementById('mainApp');
+    const loginBtn = document.getElementById('loginBtn');
+    const loginEmail = document.getElementById('loginEmail');
+    const loginPassword = document.getElementById('loginPassword');
+    const loginError = document.getElementById('loginError');
+
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const statusEl = document.getElementById('status');
+    const startBtn = document.getElementById('startBtn');
+    const pushToTalkZone = document.getElementById('pushToTalkZone');
+    const pushToTalkLabel = document.getElementById('pushToTalkLabel');
+    const micIcon = document.getElementById('micIcon');
+
+    const detectBtn = document.getElementById('detectBtn');
+    const readTextBtn = document.getElementById('readTextBtn');
+    const describeSceneBtn = document.getElementById('describeSceneBtn');
+    const identifyCurrencyBtn = document.getElementById('identifyCurrencyBtn');
+
+    const BASE_URL = 'http://127.0.0.1:8000';
+    const DETECT_API_URL = `${BASE_URL}/api/detect`;
+    const OCR_API_URL = `${BASE_URL}/api/read-text`;
+    const SCENE_API_URL = `${BASE_URL}/api/describe-scene`;
+    const CURRENCY_API_URL = `${BASE_URL}/api/identify-currency`;
+    const VOICE_API_URL = `${BASE_URL}/api/voice-command`;
+    const SAVE_FACE_API_URL = `${BASE_URL}/api/save-face`;
+    const LOGIN_API_URL = `${BASE_URL}/api/login`;
+
+    let cameraStarted = false;
+    let priorityLock = false;
+    let lastSpokenLabels = '';
+    let recognition = null;
+    let isListening = false;
+    let awaitingPersonName = false;
+
+    // ---------- Login ----------
+    loginBtn.addEventListener('click', async () => {
+      loginError.textContent = '';
+      try {
+        const res = await fetch(LOGIN_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: loginEmail.value, password: loginPassword.value }),
+        });
+        if (!res.ok) throw new Error('Invalid email or password.');
+        loginScreen.style.display = 'none';
+        mainApp.style.display = 'block';
+      } catch (err) {
+        loginError.textContent = err.message;
+      }
+    });
+
+    // ---------- Speech output ----------
+    function speak(text, isPriority = false) {
+      if (priorityLock && !isPriority) return;
+      speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      if (isPriority) {
+        priorityLock = true;
+        utterance.onend = () => { priorityLock = false; };
+        utterance.onerror = () => { priorityLock = false; };
+      }
+      speechSynthesis.speak(utterance);
+    }
+
+    // ---------- Camera ----------
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        cameraStarted = true;
+        startBtn.disabled = true;
+        startBtn.textContent = 'Camera Running';
+        pushToTalkZone.classList.remove('disabled');
+        pushToTalkLabel.textContent = 'Hold here and speak';
+        statusEl.textContent = 'Camera ready. Hold the mic area and ask something.';
+        speak('Camera ready. Hold the microphone area and ask me something.', true);
+        setTimeout(initFallDetection, 1000);
+      } catch (err) {
+        statusEl.textContent = `Camera error: ${err.message}`;
+      }
+    }
+    startBtn.addEventListener('click', startCamera);
+
+    function captureFrameAsBlob() {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.8));
+    }
+
+    // ---------- Voice command (push-to-talk) ----------
+    function initRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        statusEl.textContent = 'Speech recognition not supported. Please use Chrome.';
+        speak('Speech recognition is not supported in this browser. Please use Chrome.', true);
+        return null;
+      }
+      const rec = new SpeechRecognition();
+      rec.lang = 'en-US';
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      return rec;
+    }
+
+    async function sendVoiceCommand(transcript) {
+      const blob = await captureFrameAsBlob();
+      const formData = new FormData();
+      formData.append('image', blob, 'snapshot.jpg');
+
+      if (awaitingPersonName) {
+        formData.append('name', transcript);
+        statusEl.textContent = `Saving as "${transcript}"...`;
+        try {
+          const res = await fetch(SAVE_FACE_API_URL, { method: 'POST', body: formData });
+          if (!res.ok) throw new Error(`Server error: ${res.status}`);
+          const data = await res.json();
+          statusEl.textContent = data.spoken_text;
+          speak(data.spoken_text, true);
+        } catch (err) {
+          statusEl.textContent = `Error: ${err.message}`;
+          speak('Sorry, something went wrong saving that.', true);
+        } finally {
+          awaitingPersonName = false;
+        }
+        return;
+      }
+
+      statusEl.textContent = `Heard: "${transcript}" — thinking...`;
+      formData.append('transcript', transcript);
+
+      try {
+        const res = await fetch(VOICE_API_URL, { method: 'POST', body: formData });
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        const data = await res.json();
+
+        statusEl.textContent = data.spoken_text;
+        speak(data.spoken_text, true);
+
+        if (data.awaiting_name) {
+          awaitingPersonName = true;
+          statusEl.textContent += ' (hold and say the name)';
+        }
+      } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+        speak('Sorry, something went wrong.', true);
+      }
+    }
+
+    function startListening() {
+      if (!cameraStarted || isListening) return;
+      recognition = initRecognition();
+      if (!recognition) return;
+
+      isListening = true;
+      pushToTalkZone.classList.add('listening');
+      micIcon.textContent = '🔴';
+      statusEl.textContent = 'Listening...';
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        sendVoiceCommand(transcript);
+      };
+      recognition.onerror = (event) => {
+        statusEl.textContent = `Recognition error: ${event.error}`;
+        stopListeningUI();
+      };
+      recognition.onend = stopListeningUI;
+
+      recognition.start();
+    }
+
+    function stopListening() {
+      if (recognition && isListening) recognition.stop();
+    }
+
+    function stopListeningUI() {
+      isListening = false;
+      pushToTalkZone.classList.remove('listening');
+      micIcon.textContent = '🎤';
+    }
+
+    pushToTalkZone.addEventListener('mousedown', startListening);
+    pushToTalkZone.addEventListener('mouseup', stopListening);
+    pushToTalkZone.addEventListener('touchstart', (e) => { e.preventDefault(); startListening(); });
+    pushToTalkZone.addEventListener('touchend', (e) => { e.preventDefault(); stopListening(); });
+
+    // ---------- Manual mode (debug buttons) ----------
+    detectBtn.addEventListener('click', async () => {
+      if (!cameraStarted) { statusEl.textContent = 'Start the camera first.'; return; }
+      const blob = await captureFrameAsBlob();
+      const formData = new FormData();
+      formData.append('image', blob, 'frame.jpg');
+      try {
+        const res = await fetch(DETECT_API_URL, { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.count === 0) {
+          statusEl.textContent = 'No objects detected.';
+          lastSpokenLabels = '';
+          return;
+        }
+        const sorted = [...data.detections].sort((a, b) => {
+          const order = { close: 0, medium: 1, far: 2 };
+          return order[a.proximity] - order[b.proximity];
+        });
+        const summary = sorted.map(d => `${d.label} ${d.proximity}, ${d.direction}`).join('. ');
+        statusEl.textContent = `Detected: ${summary}`;
+        if (summary !== lastSpokenLabels) {
+          const urgent = sorted.filter(d => d.proximity !== 'far');
+          if (urgent.length > 0) {
+            speak(urgent.map(d => `${d.label} ${d.proximity}, ${d.direction}`).join('. '));
+          }
+          lastSpokenLabels = summary;
+        }
+      } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+      }
+    });
+
+    readTextBtn.addEventListener('click', async () => {
+      if (!cameraStarted) { statusEl.textContent = 'Start the camera first.'; return; }
+      statusEl.textContent = 'Reading text...';
+      const blob = await captureFrameAsBlob();
+      const formData = new FormData();
+      formData.append('image', blob, 'snapshot.jpg');
+      try {
+        const res = await fetch(OCR_API_URL, { method: 'POST', body: formData });
+        const data = await res.json();
+        const text = data.combined_text.trim() || 'No text detected.';
+        statusEl.textContent = text;
+        speak(text, true);
+      } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+      }
+    });
+
+    describeSceneBtn.addEventListener('click', async () => {
+      if (!cameraStarted) { statusEl.textContent = 'Start the camera first.'; return; }
+      statusEl.textContent = 'Describing scene...';
+      const blob = await captureFrameAsBlob();
+      const formData = new FormData();
+      formData.append('image', blob, 'snapshot.jpg');
+      try {
+        const res = await fetch(SCENE_API_URL, { method: 'POST', body: formData });
+        const data = await res.json();
+        statusEl.textContent = data.description;
+        speak(data.description, true);
+      } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+      }
+    });
+
+    identifyCurrencyBtn.addEventListener('click', async () => {
+      if (!cameraStarted) { statusEl.textContent = 'Start the camera first.'; return; }
+      statusEl.textContent = 'Identifying currency...';
+      const blob = await captureFrameAsBlob();
+      const formData = new FormData();
+      formData.append('image', blob, 'snapshot.jpg');
+      try {
+        const res = await fetch(CURRENCY_API_URL, { method: 'POST', body: formData });
+        const data = await res.json();
+        statusEl.textContent = data.result;
+        speak(data.result, true);
+      } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+      }
+    });
+
+    // ---------- Emergency / Fall Detection ----------
+    const EMAILJS_PUBLIC_KEY = 'KAcET1ZdXmfFjR7Gt';
+    const EMAILJS_SERVICE_ID = 'YOUR_SERVICE_ID';
+    const EMAILJS_TEMPLATE_ID = 'template_qonwh6b';
+    const EMERGENCY_CONTACT_EMAIL = 'mr.vedantvas@gmail.com';
+
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+
+    const FALL_ACCEL_THRESHOLD = 25;
+    let fallCooldown = false;
+
+    function initFallDetection() {
+      if (typeof DeviceMotionEvent === 'undefined') {
+        console.log('DeviceMotion not supported on this device.');
+        return;
+      }
+      if (typeof DeviceMotionEvent.requestPermission === 'function') {
+        DeviceMotionEvent.requestPermission().then(state => {
+          if (state === 'granted') window.addEventListener('devicemotion', handleMotion);
+        });
+      } else {
+        window.addEventListener('devicemotion', handleMotion);
+      }
+    }
+
+    function handleMotion(event) {
+      if (fallCooldown) return;
+      const acc = event.acceleration || event.accelerationIncludingGravity;
+      if (!acc) return;
+      const magnitude = Math.sqrt((acc.x || 0) ** 2 + (acc.y || 0) ** 2 + (acc.z || 0) ** 2);
+      if (magnitude > FALL_ACCEL_THRESHOLD) {
+        fallCooldown = true;
+        handlePossibleFall();
+        setTimeout(() => { fallCooldown = false; }, 15000);
+      }
+    }
+
+    function handlePossibleFall() {
+      statusEl.textContent = 'Possible fall detected. Are you okay?';
+      speak('Possible fall detected. Are you okay? Please say yes if you are fine.', true);
+
+      const rec = initRecognition();
+      if (!rec) { triggerEmergencyAlert(); return; }
+
+      let responded = false;
+      const timeout = setTimeout(() => {
+        if (!responded) { rec.stop(); triggerEmergencyAlert(); }
+      }, 10000);
+
+      rec.onresult = (event) => {
+        responded = true;
+        clearTimeout(timeout);
+        const transcript = event.results[0][0].transcript.toLowerCase();
+        if (transcript.includes('yes') || transcript.includes('fine') || transcript.includes('okay')) {
+          statusEl.textContent = "Glad you're okay.";
+          speak("Okay, glad you're okay.", true);
+        } else {
+          triggerEmergencyAlert();
+        }
+      };
+
+      rec.onerror = () => {
+        if (!responded) { clearTimeout(timeout); triggerEmergencyAlert(); }
+      };
+
+      rec.start();
+    }
+
+    function triggerEmergencyAlert() {
+      statusEl.textContent = 'Sending emergency alert...';
+      speak('No response received. Sending an emergency alert now.', true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => sendEmergencyEmail(`${position.coords.latitude}, ${position.coords.longitude}`),
+        () => sendEmergencyEmail('Location unavailable')
+      );
+    }
+
+    function sendEmergencyEmail(location) {
+      emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        message: 'A possible fall was detected and no response was received.',
+        location: location,
+        to_email: EMERGENCY_CONTACT_EMAIL,
+      }).then(() => {
+        statusEl.textContent = 'Emergency alert sent.';
+        speak('Emergency alert has been sent.', true);
+      }).catch((err) => {
+        statusEl.textContent = 'Failed to send alert: ' + err.text;
+      });
+    }
+  </script>
+</body>
+</html>
