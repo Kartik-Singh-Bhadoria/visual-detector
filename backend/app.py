@@ -1,5 +1,5 @@
 # backend/app.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from backend.api.routes import ocr
 from backend.core.config import get_settings
@@ -9,6 +9,8 @@ from backend.api.routes import detector
 from backend.api.routes import voice        
 from backend.api.routes import scene
 from backend.api.routes import auth
+from backend.api.routes import location
+from backend.utils.auth import get_current_user
 
 setup_logging()
 logger = get_logger(__name__)
@@ -28,11 +30,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(scene.router, prefix="/api", tags=["scene"])
-app.include_router(detector.router, prefix="/api", tags=["detector"])
-app.include_router(ocr.router, prefix="/api", tags=["ocr"])
-app.include_router(currency.router, prefix="/api", tags=["currency"])
-app.include_router(voice.router, prefix="/api", tags=["voice"])
+app.include_router(scene.router, prefix="/api", tags=["scene"], dependencies=[Depends(get_current_user)])
+app.include_router(detector.router, prefix="/api", tags=["detector"], dependencies=[Depends(get_current_user)])
+app.include_router(ocr.router, prefix="/api", tags=["ocr"], dependencies=[Depends(get_current_user)])
+app.include_router(currency.router, prefix="/api", tags=["currency"], dependencies=[Depends(get_current_user)])
+app.include_router(voice.router, prefix="/api", tags=["voice"], dependencies=[Depends(get_current_user)])
+app.include_router(location.router, prefix="/api", tags=["location"], dependencies=[Depends(get_current_user)])
 app.include_router(auth.router, prefix="/api", tags=["auth"])
 
 @app.on_event("startup")

@@ -5,8 +5,21 @@ Opens your webcam, shows a live preview, and press SPACE to capture one frame
 and get a scene description back from Gemini. Press 'q' to quit.
 """
 import cv2
+import numpy as np
 
 from ai_engine.scene.scene_narrator import SceneNarrator
+
+
+def test_describe_uses_offline_fallback_without_gemini_key():
+    narrator = SceneNarrator.__new__(SceneNarrator)
+    narrator.model = None
+
+    frame = np.zeros((200, 200, 3), dtype=np.uint8)
+    description = narrator.describe(frame)
+
+    assert isinstance(description, str)
+    assert len(description) > 0
+
 
 def main():
     narrator = SceneNarrator()
@@ -38,6 +51,7 @@ def main():
 
     cap.release()
     cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
     main()

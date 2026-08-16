@@ -16,14 +16,14 @@ class CurrencyRecognizer:
     Reuses the same VLM as scene narration, with a specialized prompt.
     """
 
-    def __init__(self, model_name: str = "gemini-3.5-flash-lite"):
+    def __init__(self, model_name: str | None = None):
         settings = get_settings()
         if not settings.google_api_key:
             raise RuntimeError(
                 "GOOGLE_API_KEY is not set. Add it to your .env file before using currency recognition."
             )
         genai.configure(api_key=settings.google_api_key)
-        self.model = genai.GenerativeModel(model_name)
+        self.model = genai.GenerativeModel(model_name or settings.gemini_model_name)
 
     def identify(self, frame: np.ndarray) -> str:
         """

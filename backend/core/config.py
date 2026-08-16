@@ -40,9 +40,15 @@ class Settings(BaseSettings):
 
     # Third-party keys (populate later via .env, never hardcode)
     openai_api_key: str | None = None
-    google_maps_api_key: str | None = None
+    # Separate from GOOGLE_API_KEY (used for Gemini). Needs the "Geocoding API"
+    # enabled on the same or a different Google Cloud project — Gemini access
+    # alone does not grant Maps access.
     google_maps_api_key: str | None = None
     google_api_key: str | None = None
+
+    # Gemini & Auth Config
+    gemini_model_name: str = "gemini-2.0-flash"
+    auth_secret_key: str = "visionguide-secret-key-change-me-in-production"
 
     app_user_email: str = "test@example.com"
     app_user_password: str = "changeme"

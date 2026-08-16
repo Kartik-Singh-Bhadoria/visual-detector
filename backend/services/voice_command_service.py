@@ -15,7 +15,7 @@ logger = get_logger(__name__)
 
 settings = get_settings()
 genai.configure(api_key=settings.google_api_key)
-_intent_model = genai.GenerativeModel("gemini-3.5-flash-lite")
+_intent_model = genai.GenerativeModel(settings.gemini_model_name)
 _face_recognizer = FaceRecognizer()
 
 VALID_INTENTS = [
